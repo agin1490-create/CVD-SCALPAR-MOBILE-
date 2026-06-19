@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050810">
+  <title>CVD SCALPER | Mobile</title>
+  <style>
+    :root{--bg:#050810;--card:#0a0f1c;--neon:#00d4ff;--green:#00ff88;--red:#ff3366;--orange:#ff9500;--text:#e0e6ed;--muted:#6b7280;--border:#1e293b;--safe-bottom:env(safe-area-inset-bottom,20px)}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,monospace;-webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none}
+    body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:calc(70px + var(--safe-bottom));background:linear-gradient(135deg,var(--bg) 0%,#0c1224 100%)}
+    header{text-align:center;padding:1.2rem 1rem 0.8rem;border-bottom:1px solid var(--border)}
+    .logo{font-weight:900;font-size:1.6rem;letter-spacing:2px;background:linear-gradient(90deg,var(--green),var(--neon));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .status-bar{display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;font-size:0.8rem;color:var(--muted)}
+    .ws-status{display:inline-flex;align-items:center;gap:0.4rem;padding:0.2rem 0.6rem;border-radius:20px;font-weight:600}
+    .ws-status.connected{background:rgba(0,255,136,0.1);color:var(--green)}
+    .ws-status.disconnected{background:rgba(255,51,102,0.1);color:var(--red)}
+    main{padding:1rem;max-width:500px;margin:0 auto}
+    .asset-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:1rem;position:relative;overflow:hidden}
+    .asset-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--neon);opacity:0;transition:opacity 0.3s}
+    .asset-card.active::before{opacity:1}
+    .header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
+    .asset-name{font-weight:700;font-size:1.1rem}
+    .price{font-weight:800;font-size:1.3rem;font-variant-numeric:tabular-nums}
+    .price.up{color:var(--green)}.price.down{color:var(--red)}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin:0.8rem 0}
+    .metric{background:rgba(30,41,59,0.6);padding:0.6rem 0.4rem;border-radius:8px;text-align:center}
+    .metric-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
+    .metric-value{font-weight:700;margin-top:0.2rem;font-variant-numeric:tabular-nums}
+    .scorecard{display:grid;grid-template-columns:repeat(2,1fr);gap:0.4rem;margin:0.8rem 0;font-size:0.75rem}
+    .score-item{display:flex;align-items:center;gap:0.4rem;padding:0.3rem 0.5rem;background:rgba(30,41,59,0.4);border-radius:6px}
+    .score-dot{width:8px;height:8px;border-radius:50%}
+    .score-dot.plus{background:var(--green)}
+    .score-dot.minus{background:var(--red)}
+    .score-dot.neutral{background:var(--orange)}
+    .signal-box{text-align:center;padding:0.9rem;border-radius:10px;margin-top:0.8rem;font-weight:800;font-size:1rem;letter-spacing:1px;border:2px solid}
+    .signal-box.buy{background:rgba(0,255,136,0.1);color:var(--green);border-color:var(--green);box-shadow:0 0 15px rgba(0,255,136,0.2)}
+    .signal-box.sell{background:rgba(255,51,102,0.1);color:var(--red);border-color:var(--red);box-shadow:0 0 15px rgba(255,51,102,0.2)}
+    .signal-box.neutral{background:rgba(255,149,0,0.05);color:var(--orange);border-color:var(--orange)}
+    .controls{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-top:1rem}
+    .btn{padding:0.8rem;border:none;border-radius:10px;font-weight:700;font-size:0.85rem;cursor:pointer;transition:all 0.2s;min-height:48px}
+    .btn-primary{background:var(--neon);color:var(--bg)}
+    .btn-primary:active{transform:scale(0.98)}
+    .btn-secondary{background:rgba(30,41,59,0.6);color:var(--text);border:1px solid var(--border)}
+    .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,28,0.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:0.8rem 0 calc(0.8rem + var(--safe-bottom));z-index:100}
+    .nav-item{display:flex;flex-direction:column;align-items:center;gap:0.2rem;font-size:0.7rem;color:var(--muted);cursor:pointer}
+    .nav-item.active{color:var(--neon)}
+    .nav-icon{font-size:1.2rem}    .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;visibility:hidden;transition:all 0.3s}
+    .modal.active{opacity:1;visibility:visible}
+    .modal-sheet{background:var(--card);border-top-left-radius:16px;border-top-right-radius:16px;padding:1.2rem;width:100%;max-width:500px;max-height:70vh;overflow-y:auto}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .close-btn{background:none;border:none;color:var(--muted);font-size:1.5rem;cursor:pointer}
+    .trade-list{max-height:300px;overflow-y:auto}
+    .trade-item{display:flex;justify-content:space-between;padding:0.6rem;margin:0.3rem 0;background:rgba(30,41,59,0.5);border-radius:8px;font-size:0.8rem}
+    .trade-item.buy{border-left:3px solid var(--green)}
+    .trade-item.sell{border-left:3px solid var(--red)}
+    .pwa-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,15,28,0.95);border:1px solid var(--neon);padding:1.5rem;border-radius:16px;text-align:center;z-index:300;display:none;max-width:90%}
+    @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">⚡ CVD SCALPER</div>
+    <div class="status-bar">
+      <span id="market-status">Loading...</span>
+      <span class="ws-status disconnected" id="ws-status">● OFFLINE</span>
+    </div>
+  </header>
+
+  <main id="cards-container"></main>
+
+  <div class="pwa-hint" id="pwa-hint">
+    <p>📲 Tap <strong>Share → Add to Home Screen</strong> for app-like experience</p>
+    <button class="btn btn-primary" style="margin-top:0.8rem;width:100%" onclick="document.getElementById('pwa-hint').style.display='none'">GOT IT</button>
+  </div>
+
+  <nav class="bottom-nav">
+    <div class="nav-item active" onclick="showView('signals')"><span class="nav-icon">📊</span>Signals</div>
+    <div class="nav-item" onclick="showView('trades')"><span class="nav-icon">📝</span>Trades</div>
+    <div class="nav-item" onclick="showView('info')"><span class="nav-icon">ℹ️</span>Info</div>
+  </nav>
+
+  <div class="modal" id="trade-modal">
+    <div class="modal-sheet">
+      <div class="modal-header"><h3>📝 PAPER TRADE LOG</h3><button class="close-btn" onclick="closeModal()">&times;</button></div>
+      <div class="trade-list" id="trade-list">
+        <div style="text-align:center;color:var(--muted);padding:1rem">No trades logged yet</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ================= CONFIG =================
+    const CONFIG = {
+      symbols: ['btcusdt','ethusdt'],
+      wsUrl: 'wss://fstream.binance.com/ws',
+      refreshUI: 1000, // 1Hz to save battery      cvdReset: true
+    };
+
+    // ================= STATE =================
+    const state = {
+      ws: null, reconnectAttempts: 0, lastCandle: {},
+      data: CONFIG.symbols.map(s => ({
+        symbol: s.toUpperCase(), price: 0, cvd: 0, vwap: 0, rsi: 50, ema9: 0, ema21: 0, volAvg: 0,
+        candles: [], trades: [], score: 0, signal: 'NEUTRAL'
+      }))
+    };
+
+    // ================= WEBSOCKET MANAGER =================
+    function initWS() {
+      const streams = state.data.map(d => `${d.symbol.toLowerCase()}@trade/${d.symbol.toLowerCase()}@kline_5m`).join('/');
+      const url = `${CONFIG.wsUrl}/${streams}`;
+      state.ws = new WebSocket(url);
+      state.ws.onopen = () => { setWSStatus(true); state.reconnectAttempts = 0; };
+      state.ws.onclose = () => { setWSStatus(false); setTimeout(initWS, Math.min(5000, 1000 * Math.pow(2, state.reconnectAttempts++))); };
+      state.ws.onerror = () => state.ws.close();
+      state.ws.onmessage = (e) => parseMessage(JSON.parse(e.data));
+    }
+
+    function setWSStatus(connected) {
+      const el = document.getElementById('ws-status');
+      el.className = `ws-status ${connected ? 'connected' : 'disconnected'}`;
+      el.textContent = connected ? '● LIVE' : '● RECONNECTING';
+    }
+
+    // ================= DATA PARSER =================
+    function parseMessage(msg) {
+      const stream = msg.stream;
+      const sym = stream.split('@')[0].toUpperCase();
+      const asset = state.data.find(d => d.symbol === sym);
+      if (!asset) return;
+
+      if (stream.includes('@trade')) {
+        const t = msg.data;
+        const qty = parseFloat(t.q);
+        const delta = t.m ? -qty : qty; // m=true → seller initiated
+        asset.cvd += delta;
+        asset.trades.push({ t: Date.now(), p: parseFloat(t.p), q: qty, d: delta });
+        if (asset.trades.length > 200) asset.trades = asset.trades.slice(-200);
+      } else if (stream.includes('@kline')) {
+        const k = msg.data.k;
+        if (k.x) { // Candle closed
+          asset.candles.push({ o: +k.o, h: +k.h, l: +k.l, c: +k.c, v: +k.v });
+          if (asset.candles.length > 100) asset.candles = asset.candles.slice(-100);
+          calculateIndicators(asset);
+        }        asset.price = +k.c;
+      }
+    }
+
+    // ================= INDICATORS & SCORECARD =================
+    function calcEMA(data, period) {
+      const k = 2/(period+1); let ema = data[0]?.c || 0;
+      for(let i=1;i<data.length;i++) ema = data[i].c * k + ema * (1-k);
+      return ema;
+    }
+
+    function calcRSI(closes, period=14) {
+      if(closes.length < period+1) return 50;
+      let gains=0, losses=0;
+      for(let i=1;i<=period;i++){const d=closes[i]-closes[i-1]; d>=0?gains+=d:losses-=d;}
+      let ag=gains/period, al=losses/period;
+      for(let i=period+1;i<closes.length;i++){
+        const d=closes[i]-closes[i-1];
+        ag=(ag*(period-1)+(d>0?d:0))/period;
+        al=(al*(period-1)+(d<0?-d:0))/period;
+      }
+      return al===0?100:100-100/(1+ag/al);
+    }
+
+    function calcVWAP(candles) {
+      let cumPV=0, cumV=0;
+      candles.forEach(c => {
+        const tp = (c.h + c.l + c.c)/3;
+        cumPV += tp * c.v; cumV += c.v;
+      });
+      return cumV===0 ? 0 : cumPV/cumV;
+    }
+
+    function calculateIndicators(asset) {
+      if(asset.candles.length < 20) return;
+      const closes = asset.candles.map(c=>c.c);
+      asset.ema9 = calcEMA(asset.candles, 9);
+      asset.ema21 = calcEMA(asset.candles, 21);
+      asset.rsi = calcRSI(closes);
+      asset.vwap = calcVWAP(asset.candles);
+      asset.volAvg = asset.candles.slice(-20).reduce((a,b)=>a+b.v,0)/20;
+      updateScorecard(asset);
+    }
+
+    function updateScorecard(asset) {
+      let score = 0;
+      const conditions = [];
+      
+      // 1. CVD Trend (rising/falling over last 5 candles)
+      const cvdHistory = asset.trades.slice(-5).map(t=>t.d);      const cvdTrend = cvdHistory.reduce((a,b)=>a+b,0);
+      conditions.push({name:'CVD Trend', val: cvdTrend>0?1:cvdTrend<0?-1:0});
+      score += conditions[0].val;
+
+      // 2. Price vs VWAP
+      conditions.push({name:'Price vs VWAP', val: asset.price>asset.vwap?1:asset.price<asset.vwap?-1:0});
+      score += conditions[1].val;
+
+      // 3. RSI
+      conditions.push({name:'RSI (14)', val: asset.rsi<30?-1:asset.rsi>70?1:0});
+      score += conditions[2].val;
+
+      // 4. EMA Cross
+      conditions.push({name:'EMA 9/21', val: asset.ema9>asset.ema21?1:-1});
+      score += conditions[3].val;
+
+      // 5. Volume Spike
+      const lastVol = asset.candles[asset.candles.length-1]?.v || 0;
+      conditions.push({name:'Volume', val: lastVol>asset.volAvg*1.5?1:0});
+      score += conditions[4].val;
+
+      asset.score = score;
+      asset.signal = score>=3?'BUY':score<=-3?'SELL':'NEUTRAL';
+      asset.conditions = conditions;
+    }
+
+    // ================= UI RENDERER =================
+    function renderUI() {
+      const container = document.getElementById('cards-container');
+      container.innerHTML = state.data.map(a => `
+        <div class="asset-card ${a.signal!=='NEUTRAL'?'active':''}">
+          <div class="header-row">
+            <span class="asset-name">${a.symbol}</span>
+            <span class="price ${a.price>a.candles[a.candles.length-1]?.o?'up':'down'}">$${a.price.toFixed(2)}</span>
+          </div>
+          <div class="metrics">
+            <div class="metric"><div class="metric-label">CVD</div><div class="metric-value">${a.cvd.toFixed(1)}</div></div>
+            <div class="metric"><div class="metric-label">VWAP</div><div class="metric-value">$${a.vwap.toFixed(2)}</div></div>
+            <div class="metric"><div class="metric-label">RSI</div><div class="metric-value">${a.rsi.toFixed(1)}</div></div>
+          </div>
+          <div class="scorecard">
+            ${a.conditions.map(c => `<div class="score-item"><span class="score-dot ${c.val>0?'plus':c.val<0?'minus':'neutral'}"></span><span>${c.name} ${c.val>0?'▲':c.val<0?'▼':'●'}</span></div>`).join('')}
+          </div>
+          <div class="signal-box ${a.signal.toLowerCase()}">${a.signal} ${Math.abs(a.score)>=4?'★':''}</div>
+          <div class="controls">
+            <button class="btn btn-primary" onclick="logTrade('${a.symbol}','${a.signal}')">📝 LOG TRADE</button>
+            <button class="btn btn-secondary" onclick="resetCVD('${a.symbol}')">🔄 RESET CVD</button>
+          </div>
+        </div>
+      `).join('');    }
+
+    function logTrade(sym, sig) {
+      const trades = JSON.parse(localStorage.getItem('cvd_trades')||'[]');
+      trades.unshift({sym, type:sig, price:state.data.find(d=>d.symbol===sym).price, time:new Date().toLocaleTimeString()});
+      localStorage.setItem('cvd_trades', JSON.stringify(trades));
+      updateTradeList();
+      if(navigator.vibrate) navigator.vibrate(50);
+    }
+
+    function resetCVD(sym) {
+      const asset = state.data.find(d=>d.symbol===sym);
+      if(asset) asset.cvd = 0;
+    }
+
+    function updateTradeList() {
+      const trades = JSON.parse(localStorage.getItem('cvd_trades')||'[]');
+      const list = document.getElementById('trade-list');
+      if(!trades.length) { list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:1rem">No trades logged yet</div>'; return; }
+      list.innerHTML = trades.slice(0,20).map(t => `
+        <div class="trade-item ${t.type.toLowerCase()}">
+          <span>${t.sym} ${t.type} @ $${t.price.toFixed(2)}</span>
+          <span>${t.time}</span>
+        </div>`).join('');
+    }
+
+    // ================= NAVIGATION & UTILS =================
+    function showView(view) {
+      document.querySelectorAll('.nav-item').forEach((el,i)=>el.classList.toggle('active', i===(view==='signals'?0:view==='trades'?1:2)));
+      if(view==='trades') { document.getElementById('trade-modal').classList.add('active'); updateTradeList(); }
+      else document.getElementById('trade-modal').classList.remove('active');
+    }
+    function closeModal() { document.getElementById('trade-modal').classList.remove('active'); }
+
+    // ================= INIT =================
+    document.addEventListener('DOMContentLoaded', () => {
+      renderUI();
+      initWS();
+      setInterval(renderUI, CONFIG.refreshUI);
+      if(!window.matchMedia('(display-mode: standalone)').matches) setTimeout(()=>document.getElementById('pwa-hint').style.display='block', 2000);
+    });
+  </script>
+</body>
+</html>
