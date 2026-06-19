@@ -15,7 +15,7 @@
     .status{margin-top:0.5rem;padding:0.3rem 0.8rem;border-radius:20px;display:inline-block;font-size:0.8rem;font-weight:600}
     .status.connected{background:rgba(0,255,136,0.15);color:#00ff88}
     .status.disconnected{background:rgba(255,51,102,0.15);color:#ff3366}
-    .status.error{background:rgba(255,149,0,0.15);color:#ff9500}
+    .counter{font-size:0.75rem;color:#6b7280;margin-top:0.5rem}
     .card{background:#0a0f1c;border:1px solid #1e293b;border-radius:12px;padding:1rem;margin-bottom:1rem}
     .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
     .name{font-size:1.1rem;font-weight:700}
@@ -29,11 +29,6 @@
     .signal.buy{background:rgba(0,255,136,0.1);color:#00ff88;border-color:#00ff88}
     .signal.sell{background:rgba(255,51,102,0.1);color:#ff3366;border-color:#ff3366}
     .signal.neutral{background:rgba(255,149,0,0.05);color:#ff9500;border-color:#ff9500}
-    .btn{width:100%;padding:0.8rem;margin-top:0.6rem;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:0.85rem}
-    .btn-primary{background:#00d4ff;color:#050810}
-    .btn-success{background:#00ff88;color:#050810}
-    .btn-danger{background:#ff3366;color:white}
-    .error-msg{background:rgba(255,51,102,0.1);border:1px solid #ff3366;color:#ff3366;padding:0.8rem;border-radius:8px;margin:1rem 0;font-size:0.8rem;word-break:break-all}
     .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,28,0.98);backdrop-filter:blur(10px);border-top:1px solid #1e293b;display:flex;justify-content:space-around;padding:0.7rem 0 calc(0.7rem + env(safe-area-inset-bottom));z-index:100}
     .nav-item{text-align:center;font-size:0.7rem;color:#6b7280;cursor:pointer}
     .nav-item.active{color:#00d4ff}
@@ -43,191 +38,117 @@
 <body>
   <div class="header">
     <div class="logo">⚡ CVD SCALPER PRO</div>
-    <div class="subtitle">Confluence-Based Signals • Risk-Managed</div>
-    <div class="status disconnected" id="status">Ready</div>
-    <br>
-    <button class="btn btn-primary" style="margin-top:1rem;max-width:200px;display:inline-block" onclick="connect()"> CONNECT NOW</button>
+    <div class="subtitle">Real-Time Trade Flow Analysis</div>
+    <div class="status disconnected" id="status">Connecting...</div>
+    <div class="counter" id="msg-counter">Messages: 0</div>
   </div>
-  <div id="error-box" class="error-msg" style="display:none"></div>
+
   <div id="cards"></div>
 
   <div class="nav">
     <div class="nav-item active"><div class="nav-icon">📊</div>Signals</div>
-    <div class="nav-item"><div class="nav-icon">📝</div>Trades</div>
-    <div class="nav-item"><div class="nav-icon"></div>Stats</div>
+    <div class="nav-item"><div class="nav-icon">📝</div>Trades</div>    <div class="nav-item"><div class="nav-icon">📈</div>Stats</div>
   </div>
 
   <script>
     const CONFIG = {
       symbols: ['BTCUSDT', 'ETHUSDT'],
-      wsUrl: 'wss://stream.binance.com:9443/ws'
+      wsUrl: 'wss://stream.binance.com:9443/stream?streams=btcusdt@trade/ethusdt@trade'
     };
 
     let ws = null;
-    let data = {};
-    let isConnected = false;
+    let msgCount = 0;
+    let data = {
+      'BTCUSDT': { price: 0, cvd: 0, trades: 0, vwap: 0, cumVP: 0, cumV: 0, score: 0, signal: 'NEUTRAL' },
+      'ETHUSDT': { price: 0, cvd: 0, trades: 0, vwap: 0, cumVP: 0, cumV: 0, score: 0, signal: 'NEUTRAL' }
+    };
 
-    // Initialize Data Structure
-    CONFIG.symbols.forEach(sym => {
-      data[sym] = {
-        price: 0, cvd: 0, trades: 0, vwap: 0, rsi: 50, ema9: 0, ema21: 0,
-        cumVP: 0, cumV: 0, score: 0, signal: 'NEUTRAL', confidence: 0,
-        conditions: []
-      };
-    });
-
-    // Show Error in UI
-    function showError(msg) {
-      const box = document.getElementById('error-box');
-      box.textContent = '⚠️ ' + msg;
-      box.style.display = 'block';
-      console.error(msg);
-    }
-
-    // Connect to WebSocket
     function connect() {
       const status = document.getElementById('status');
-      const btn = document.querySelector('.btn-primary');
-      
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        showError('Already connected!');
-        return;
-      }
-
       status.textContent = 'Connecting...';
-      status.className = 'status disconnected';
-      document.getElementById('error-box').style.display = 'none';      btn.style.display = 'none';
-
-      // Create Combined Stream URL
-      const streams = CONFIG.symbols.map(s => `${s.toLowerCase()}@trade`).join('/');
-      const url = `${CONFIG.wsUrl}/${streams}`;
       
-      console.log('Connecting to:', url);
-
-      try {
-        ws = new WebSocket(url);
-      } catch (e) {
-        showError('WebSocket creation failed: ' + e.message);
-        status.textContent = 'Failed';
-        btn.style.display = 'inline-block';
-        return;
-      }
+      console.log('Connecting to:', CONFIG.wsUrl);
+      ws = new WebSocket(CONFIG.wsUrl);
 
       ws.onopen = () => {
-        console.log('WebSocket Open');
+        console.log('WebSocket Connected');
         status.textContent = '● LIVE';
         status.className = 'status connected';
-        isConnected = true;
-        fetchInitialPrices(); // Fallback prices via REST
+        fetchPrices();
       };
 
       ws.onmessage = (event) => {
         try {
-          const msg = JSON.parse(event.data);
-          handleData(msg);
+          const raw = JSON.parse(event.data);
+          console.log('Raw Message:', raw); // Debug log
+          
+          // Binance combined stream format: { stream: "btcusdt@trade", data: { ... } }
+          if (raw.stream && raw.data) {
+            handleTrade(raw.data);
+          } 
+          // Direct stream format (fallback)
+          else if (raw.e === 'trade') {
+            handleTrade(raw);
+          }
         } catch (e) {
           console.error('Parse error:', e);
         }
       };
 
       ws.onerror = (err) => {
-        console.error('WS Error:', err);
-        showError('Connection Error. Check internet or try again.');
-        status.textContent = '● ERROR';
-        status.className = 'status error';
-        ws.close();
+        console.error('WS Error:', err);        status.textContent = '● ERROR';
+        status.className = 'status disconnected';
       };
 
       ws.onclose = () => {
-        console.log('WS Closed');
-        isConnected = false;
-        status.textContent = '● DISCONNECTED';
+        status.textContent = '● RECONNECTING...';
         status.className = 'status disconnected';
-        btn.style.display = 'inline-block';
-        btn.textContent = '🔄 RECONNECT';
-      };    }
-
-    // Fallback: Get initial prices via REST API
-    async function fetchInitialPrices() {
-      try {
-        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT"]');
-        if (!response.ok) throw new Error('API Error');
-        const prices = await response.json();
-        prices.forEach(p => {
-          if (data[p.symbol]) data[p.symbol].price = parseFloat(p.price);
-        });
-        render();
-        console.log('Initial prices loaded');
-      } catch (e) {
-        console.warn('REST API failed:', e);
-      }
+        setTimeout(connect, 3000);
+      };
     }
 
-    // Handle Incoming Trade Data
-    function handleData(msg) {
-      // Binance stream format: { stream: "btcusdt@trade", data: { ... } }
-      const streamName = msg.stream;
-      if (!streamName) return;
-      
-      const symbol = streamName.split('@')[0].toUpperCase();
-      const t = msg.data; // The trade object
-      
-      if (!data[symbol] || !t) return;
+    function handleTrade(t) {
+      const symbol = t.s; // e.g., "BTCUSDT"
+      if (!data[symbol]) return;
 
       const price = parseFloat(t.p);
       const qty = parseFloat(t.q);
-      const isBuyerMaker = t.m; // true = seller initiated (red), false = buyer initiated (green)
+      const isBuyerMaker = t.m; // true = seller initiated, false = buyer initiated
 
       // Update Data
       data[symbol].price = price;
       data[symbol].trades++;
+      msgCount++;
       
-      // CVD Calculation
-      // If isBuyerMaker is false, it's a market BUY -> +qty
-      // If isBuyerMaker is true, it's a market SELL -> -qty
+      // CVD: If buyer is maker (t.m=true), it's a sell order hitting the book -> Negative CVD
+      // If buyer is NOT maker (t.m=false), it's a buy order hitting the book -> Positive CVD
       data[symbol].cvd += isBuyerMaker ? -qty : qty;
       
-      // VWAP Calculation (Cumulative)
+      // VWAP
       data[symbol].cumVP += price * qty;
       data[symbol].cumV += qty;
       data[symbol].vwap = data[symbol].cumV > 0 ? data[symbol].cumVP / data[symbol].cumV : price;
 
-      // Generate Signal
-      generateSignal(symbol);
-            // Update UI
+      // Simple Signal Logic
+      const score = (data[symbol].cvd > 0 ? 1 : -1) + (price > data[symbol].vwap ? 1 : -1);
+      data[symbol].score = score;
+      data[symbol].signal = score >= 2 ? 'BUY' : score <= -2 ? 'SELL' : 'NEUTRAL';
+
+      // Update UI
+      document.getElementById('msg-counter').textContent = `Messages: ${msgCount}`;
       render();
     }
 
-    // Signal Logic
-    function generateSignal(sym) {
-      const d = data[sym];
-      let score = 0;
-      let conditions = [];
-
-      // 1. CVD Trend
-      const cvdBullish = d.cvd > 0;
-      conditions.push({ name: 'CVD', val: cvdBullish });
-      score += cvdBullish ? 1 : -1;
-
-      // 2. Price vs VWAP
-      const aboveVwap = d.price > d.vwap;
-      conditions.push({ name: 'VWAP', val: aboveVwap });
-      score += aboveVwap ? 1 : -1;
-
-      // 3. RSI (Simplified for demo)
-      conditions.push({ name: 'RSI', val: d.rsi < 70 }); // Just a placeholder check
-      score += d.rsi < 70 ? 0.5 : -0.5;
-
-      d.score = score;
-      d.conditions = conditions;
-      d.confidence = Math.min(1, Math.abs(score) / 3);
-
-      if (score >= 2) d.signal = 'BUY';
-      else if (score <= -2) d.signal = 'SELL';
-      else d.signal = 'NEUTRAL';
+    async function fetchPrices() {
+      try {
+        const res = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT"]');
+        const prices = await res.json();
+        prices.forEach(p => {
+          if (data[p.symbol]) data[p.symbol].price = parseFloat(p.price);
+        });        render();
+      } catch (e) { console.error(e); }
     }
 
-    // Render UI
     function render() {
       const container = document.getElementById('cards');
       container.innerHTML = Object.entries(data).map(([sym, d]) => `
@@ -240,17 +161,16 @@
             <div class="box"><div class="label">CVD</div><div class="value">${d.cvd.toFixed(2)}</div></div>
             <div class="box"><div class="label">VWAP</div><div class="value">$${d.vwap.toFixed(0)}</div></div>
             <div class="box"><div class="label">Trades</div><div class="value">${d.trades}</div></div>
-            <div class="box"><div class="label">Score</div><div class="value">${d.score.toFixed(1)}</div></div>
+            <div class="box"><div class="label">Score</div><div class="value">${d.score.toFixed(0)}</div></div>
           </div>
           <div class="signal ${d.signal.toLowerCase()}">${d.signal}</div>
-        </div>      `).join('');
+        </div>
+      `).join('');
     }
 
-    // Initial Render (Empty State)
     window.addEventListener('DOMContentLoaded', () => {
       render();
-      // Auto-connect after 1 second
-      setTimeout(connect, 1000);
+      connect();
     });
   </script>
 </body>
