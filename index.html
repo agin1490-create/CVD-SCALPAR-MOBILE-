@@ -47,7 +47,8 @@
     <div class="nav-item"><div class="nav-icon">ℹ️</div>Info</div>
   </div>
 
-  <script>    let ws = null;
+  <script>
+    let ws = null;
     let data = {
       'BTCUSDT': { price: 0, cvd: 0, trades: 0, candles: 0, lastUpdate: null },
       'ETHUSDT': { price: 0, cvd: 0, trades: 0, candles: 0, lastUpdate: null }
@@ -96,7 +97,8 @@
         if (msg.e === 'kline') {
           const k = msg.k;
           data['BTCUSDT'].price = parseFloat(k.c);
-          if (k.x) data['BTCUSDT'].candles++;          data['BTCUSDT'].lastUpdate = new Date().toLocaleTimeString();
+          if (k.x) data['BTCUSDT'].candles++;
+          data['BTCUSDT'].lastUpdate = new Date().toLocaleTimeString();
           render();
         }
       };
@@ -145,7 +147,8 @@
       const container = document.getElementById('cards');
       container.innerHTML = Object.entries(data).map(([sym, d]) => {
         const isUp = d.cvd >= 0;
-        return `          <div class="card">
+        return `
+          <div class="card">
             <div class="row">
               <div class="name">${sym}</div>
               <div class="price ${isUp ? 'up' : 'down'}">$${d.price.toFixed(2)}</div>
@@ -182,3 +185,4 @@
   </script>
 </body>
 </html>
+
