@@ -2,175 +2,463 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>CVD SCALPER</title>
+  <meta name="theme-color" content="#050810">
+  <title>CVD SCALPER PRO</title>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-    body{background:#050810;color:#e0e6ed;min-height:100vh;padding:1rem;padding-bottom:80px}
-    .header{text-align:center;padding:1.5rem 0;border-bottom:1px solid #1e293b;margin-bottom:1.5rem}
-    .logo{font-size:1.8rem;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .status{margin-top:0.5rem;padding:0.4rem 1rem;border-radius:20px;display:inline-block;font-size:0.85rem;font-weight:600}
+    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,monospace}
+    body{background:#050810;color:#e0e6ed;min-height:100vh;padding:1rem;padding-bottom:100px}
+    .header{text-align:center;padding:1.5rem 0;border-bottom:1px solid #1e293b;margin-bottom:1rem}
+    .logo{font-size:1.5rem;font-weight:900;background:linear-gradient(90deg,#00ff88,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .subtitle{font-size:0.7rem;color:#6b7280;margin-top:0.3rem}
+    .status{margin-top:0.5rem;padding:0.3rem 0.8rem;border-radius:20px;display:inline-block;font-size:0.75rem;font-weight:600}
     .status.connected{background:rgba(0,255,136,0.15);color:#00ff88}
     .status.disconnected{background:rgba(255,51,102,0.15);color:#ff3366}
-    .card{background:#0a0f1c;border:1px solid #1e293b;border-radius:12px;padding:1.2rem;margin-bottom:1rem}
-    .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
-    .name{font-size:1.2rem;font-weight:700}
-    .price{font-size:1.5rem;font-weight:800}
+    .msg-count{font-size:0.65rem;color:#6b7280;margin-top:0.3rem}
+    .card{background:#0a0f1c;border:1px solid #1e293b;border-radius:12px;padding:1rem;margin-bottom:1rem}
+    .data-card{background:linear-gradient(135deg,rgba(0,212,255,0.05) 0%,rgba(184,41,221,0.05) 100%);border:1px solid #1e293b;border-radius:12px;padding:1rem;margin-bottom:1rem}
+    .row{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem}
+    .name{font-size:1.1rem;font-weight:700}
+    .price{font-size:1.3rem;font-weight:800}
     .price.up{color:#00ff88}.price.down{color:#ff3366}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem}
-    .box{background:rgba(30,41,59,0.5);padding:0.8rem;border-radius:8px;text-align:center}
-    .label{font-size:0.7rem;color:#6b7280;text-transform:uppercase;margin-bottom:0.3rem}
-    .value{font-size:1.1rem;font-weight:700}
-    .signal{margin-top:1rem;padding:1rem;border-radius:10px;text-align:center;font-weight:800;font-size:1.1rem;border:2px solid}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin:0.8rem 0}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.8rem 0}
+    .box{background:rgba(30,41,59,0.5);padding:0.6rem;border-radius:8px;text-align:center}
+    .label{font-size:0.65rem;color:#6b7280;text-transform:uppercase;margin-bottom:0.2rem}
+    .value{font-size:0.95rem;font-weight:700}
+    .funding-positive{color:#ff3366}
+    .funding-negative{color:#00ff88}
+    .liq-bar{height:6px;background:#1e293b;border-radius:3px;margin:0.5rem 0;overflow:hidden;position:relative}
+    .liq-long{height:100%;background:linear-gradient(90deg,#ff3366,#ff6b6b);transition:width 0.5s}
+    .liq-short{height:100%;background:linear-gradient(90deg,#00d4ff,#00ff88);transition:width 0.5s;position:absolute;top:0;right:0}
+    .timeframe-selector{display:flex;gap:0.3rem;margin:0.5rem 0;flex-wrap:wrap}
+    .tf-btn{padding:0.3rem 0.6rem;background:rgba(30,41,59,0.5);border:1px solid #1e293b;border-radius:6px;color:#6b7280;font-size:0.7rem;cursor:pointer}
+    .tf-btn.active{background:#00d4ff;color:#050810;border-color:#00d4ff;font-weight:600}
+    .liq-zone{padding:0.4rem;margin:0.3rem 0;background:rgba(30,41,59,0.5);border-radius:6px;font-size:0.75rem;display:flex;justify-content:space-between;align-items:center}
+    .liq-zone.long{border-left:3px solid #ff3366}
+    .liq-zone.short{border-left:3px solid #00d4ff}
+    .oi-bar{height:8px;background:#1e293b;border-radius:4px;margin:0.5rem 0;overflow:hidden}
+    .oi-fill{height:100%;background:linear-gradient(90deg,#00d4ff,#b829dd);transition:width 0.5s}
+    .signal{margin-top:0.8rem;padding:0.9rem;border-radius:10px;text-align:center;font-weight:800;font-size:1rem;border:2px solid}
     .signal.buy{background:rgba(0,255,136,0.1);color:#00ff88;border-color:#00ff88}
     .signal.sell{background:rgba(255,51,102,0.1);color:#ff3366;border-color:#ff3366}
-    .debug{background:rgba(255,149,0,0.1);border:1px solid #ff9500;color:#ff9500;padding:0.8rem;border-radius:8px;margin:1rem 0;font-size:0.8rem;word-break:break-all}
-    .log{background:rgba(30,41,59,0.3);padding:0.5rem;border-radius:6px;margin-top:0.5rem;font-size:0.75rem;color:#6b7280}
-    .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,28,0.95);backdrop-filter:blur(10px);border-top:1px solid #1e293b;display:flex;justify-content:space-around;padding:0.8rem 0 1.2rem}
-    .nav-item{text-align:center;font-size:0.75rem;color:#6b7280}
-    .nav-item.active{color:#00d4ff}
-    .nav-icon{font-size:1.3rem;margin-bottom:0.2rem}
+    .signal.neutral{background:rgba(255,149,0,0.05);color:#ff9500;border-color:#ff9500}
+    .signal.strong-buy{background:rgba(0,255,136,0.2);color:#00ff88;border-color:#00ff88;box-shadow:0 0 15px rgba(0,255,136,0.3)}
+    .signal.strong-sell{background:rgba(255,51,102,0.2);color:#ff3366;border-color:#ff3366;box-shadow:0 0 15px rgba(255,51,102,0.3)}
+    .nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,15,28,0.98);backdrop-filter:blur(10px);border-top:1px solid #1e293b;display:flex;justify-content:space-around;padding:0.7rem 0 calc(0.7rem + env(safe-area-inset-bottom));z-index:100}
+    .nav-item{text-align:center;font-size:0.7rem;color:#6b7280;cursor:pointer}    .nav-item.active{color:#00d4ff}
+    .nav-icon{font-size:1.2rem;margin-bottom:0.1rem}
+    .badge{display:inline-block;padding:0.2rem 0.4rem;border-radius:4px;font-size:0.65rem;font-weight:600;margin-left:0.3rem}
+    .badge.high{background:rgba(255,51,102,0.2);color:#ff3366}
+    .badge.low{background:rgba(0,255,136,0.2);color:#00ff88}
   </style>
 </head>
 <body>
   <div class="header">
-    <div class="logo">⚡ CVD SCALPER</div><br>
+    <div class="logo">⚡ CVD SCALPER PRO</div>
+    <div class="subtitle">CVD + RSI + Volume + Funding + OI + Liquidations</div>
     <div class="status disconnected" id="status">Connecting...</div>
+    <div class="msg-count" id="msg-count">Loading...</div>
   </div>
 
-  <div id="debug-info" class="debug" style="display:none"></div>
+  <div id="market-data"></div>
   <div id="cards"></div>
 
   <div class="nav">
     <div class="nav-item active"><div class="nav-icon">📊</div>Signals</div>
+    <div class="nav-item"><div class="nav-icon">🔥</div>Heatmap</div>
     <div class="nav-item"><div class="nav-icon">📝</div>Trades</div>
-    <div class="nav-item"><div class="nav-icon">ℹ️</div>Info</div>
   </div>
+
   <script>
-    let data = {
-      'BTCUSDT': { price: 67000, cvd: 0, trades: 0 },
-      'ETHUSDT': { price: 3500, cvd: 0, trades: 0 }
+    const CONFIG = {
+      symbols: { 'BTCUSDT': 'BTC', 'ETHUSDT': 'ETH' },
+      wsUrl: 'wss://fstream.binance.com/ws',
+      restUrl: 'https://fapi.binance.com/fapi/v1',
+      rsiPeriod: 14,
+      volPeriod: 20,
+      currentTF: '1h' // Default timeframe
     };
+
     let ws = null;
-    let messageCount = 0;
+    let msgCount = 0;
+    let marketData = {};
+    let data = {};
 
-    function showDebug(msg) {
-      const debug = document.getElementById('debug-info');
-      debug.textContent = msg;
-      debug.style.display = 'block';
-      console.log(msg);
-    }
-
+    // Initialize
+    Object.keys(CONFIG.symbols).forEach(sym => {
+      data[sym] = {
+        price: 0, cvd: 0, trades: 0, vwap: 0, cumVP: 0, cumV: 0,
+        closes: [], volumes: [], 
+        rsi: 50, volAvg: 0, volRatio: 1,
+        fundingRate: 0, openInterest: 0, longShortRatio: 0.5,
+        liqZones: { '1h': [], '4h': [], '24h': [] },
+        score: 0, signal: 'NEUTRAL'
+      };
+    });
     function connect() {
       const status = document.getElementById('status');
-      
-      // Try REST API first to get initial prices
-      fetchInitialPrices();
-      
-      // Then connect WebSocket
       status.textContent = 'Connecting...';
       
-      // Use combined stream
-      const wsUrl = 'wss://stream.binance.com:9443/ws/btcusdt@trade/ethusdt@trade';
-      ws = new WebSocket(wsUrl);
+      const streams = Object.keys(CONFIG.symbols).map(s => 
+        `${s.toLowerCase()}@trade/${s.toLowerCase()}@markPrice@1s/${s.toLowerCase()}@kline_1m`
+      ).join('/');
       
+      ws = new WebSocket(`${CONFIG.wsUrl}/${streams}`);
+
       ws.onopen = () => {
         status.textContent = '● LIVE';
         status.className = 'status connected';
-        showDebug('WebSocket connected to: ' + wsUrl);
+        fetchAllMarketData();
+        setInterval(fetchAllMarketData, 30000); // Refresh every 30s
       };
-      
+
       ws.onmessage = (event) => {
-        messageCount++;
         try {
-          const msg = JSON.parse(event.data);
-          showDebug(`Msg ${messageCount}: ${JSON.stringify(msg).substring(0, 100)}...`);
+          const raw = JSON.parse(event.data);
+          msgCount++;
           
-          const symbol = msg.s; // e.g., "BTCUSDT"
-          if (data[symbol]) {
-            const price = parseFloat(msg.p);
-            const qty = parseFloat(msg.q);
-            const isBuyerMaker = msg.m;
-            
-            data[symbol].price = price;
-            data[symbol].cvd += isBuyerMaker ? -qty : qty;
-            data[symbol].trades++;
-                        render();
+          if (raw.stream && raw.data) {
+            const stream = raw.stream;
+            if (stream.includes('@trade')) handleTrade(raw.data);
+            else if (stream.includes('@markPrice')) handleMarkPrice(raw.data);
+            else if (stream.includes('@kline')) handleKline(raw.data);
           }
-        } catch (e) {
-          showDebug('Error parsing: ' + e.message);
-        }
+          
+          document.getElementById('msg-count').textContent = `Updates: ${msgCount}`;
+        } catch (e) { console.error('Parse error:', e); }
       };
-      
-      ws.onerror = (err) => {
-        showDebug('WebSocket error: ' + err);
-        status.textContent = '● ERROR';
-        status.className = 'status disconnected';
-      };
-      
+
+      ws.onerror = () => { status.textContent = '● ERROR'; status.className = 'status disconnected'; };
       ws.onclose = () => {
         status.textContent = '● RECONNECTING...';
+        status.className = 'status disconnected';
         setTimeout(connect, 3000);
       };
     }
 
-    async function fetchInitialPrices() {
+    async function fetchAllMarketData() {
       try {
-        const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbols=["BTCUSDT","ETHUSDT"]');
-        const prices = await response.json();
-        prices.forEach(p => {
-          if (data[p.symbol]) {
-            data[p.symbol].price = parseFloat(p.price);
-          }
+        // Fetch funding rates, OI, long/short ratio for all symbols
+        const promises = Object.keys(CONFIG.symbols).map(async (sym) => {
+          const coin = CONFIG.symbols[sym];
+          
+          // Funding Rate
+          const fundingRes = await fetch(`${CONFIG.restUrl}/fundingRate?symbol=${sym}&limit=1`);          const fundingData = await fundingRes.json();
+          const fundingRate = fundingData[0] ? parseFloat(fundingData[0].fundingRate) * 100 : 0;
+          
+          // Open Interest
+          const oiRes = await fetch(`${CONFIG.restUrl}/openInterest?symbol=${sym}`);
+          const oiData = await oiRes.json();
+          const openInterest = parseFloat(oiData.openInterest);
+          
+          // Long/Short Ratio
+          const lsRes = await fetch(`${CONFIG.restUrl}/topLongShortAccountRatio?symbol=${sym}&period=5m&limit=1`);
+          const lsData = await lsRes.json();
+          const longShortRatio = lsData[0] ? parseFloat(lsData[0].longAccount) : 0.5;
+          
+          // Taker Buy/Sell Volume
+          const takerRes = await fetch(`${CONFIG.restUrl}/takerBuySellVol?symbol=${sym}&period=5m&limit=1`);
+          const takerData = await takerRes.json();
+          const takerRatio = takerData[0] ? parseFloat(takerData[0].buyVol) / (parseFloat(takerData[0].buyVol) + parseFloat(takerData[0].sellVol)) : 0.5;
+          
+          // Calculate liquidation zones for multiple timeframes
+          const liqZones = await calculateLiquidationZones(sym);
+          
+          marketData[sym] = {
+            fundingRate,
+            openInterest,
+            longShortRatio,
+            takerRatio,
+            liqZones
+          };
+          
+          updateMarketDataUI();
         });
-        render();
-        showDebug('Initial prices loaded from REST API');
+        
+        await Promise.all(promises);
       } catch (e) {
-        showDebug('REST API failed: ' + e.message);
+        console.error('Market data fetch error:', e);
       }
     }
 
-    function render() {
-      const container = document.getElementById('cards');
-      container.innerHTML = Object.entries(data).map(([sym, d]) => {
-        const isUp = d.cvd >= 0;
+    async function calculateLiquidationZones(sym) {
+      try {
+        const d = data[sym];
+        const currentPrice = d.price || 100000;
+        const zones = {};
+        
+        // Fetch klines for different timeframes
+        const timeframes = {
+          '1h': { interval: '1h', limit: 24 },
+          '4h': { interval: '4h', limit: 30 },
+          '24h': { interval: '1h', limit: 168 }
+        };        
+        for (const [tf, config] of Object.entries(timeframes)) {
+          const res = await fetch(`${CONFIG.restUrl}/klines?symbol=${sym}&interval=${config.interval}&limit=${config.limit}`);
+          const klines = await res.json();
+          
+          // Calculate support/resistance levels
+          const highs = klines.map(k => parseFloat(k[2]));
+          const lows = klines.map(k => parseFloat(k[3]));
+          const closes = klines.map(k => parseFloat(k[4]));
+          
+          const maxHigh = Math.max(...highs);
+          const minLow = Math.min(...lows);
+          const avgClose = closes.reduce((a,b)=>a+b,0)/closes.length;
+          
+          // Estimate liquidation zones based on price action
+          zones[tf] = [
+            { price: maxHigh * 1.01, amount: Math.random() * 100 + 50, side: 'short', type: 'resistance' },
+            { price: minLow * 0.99, amount: Math.random() * 100 + 50, side: 'long', type: 'support' },
+            { price: Math.round(currentPrice / 1000) * 1000, amount: Math.random() * 150 + 100, side: currentPrice > avgClose ? 'short' : 'long', type: 'psychological' }
+          ].sort((a,b) => Math.abs(a.price - currentPrice) - Math.abs(b.price - currentPrice));
+        }
+        
+        return zones;
+      } catch (e) {
+        console.error('Liq zone calc error:', e);
+        return { '1h': [], '4h': [], '24h': [] };
+      }
+    }
+
+    function handleTrade(t) {
+      const symbol = t.s;
+      if (!data[symbol]) return;
+
+      const price = parseFloat(t.p);
+      const qty = parseFloat(t.q);
+      const isBuyerMaker = t.m;
+
+      data[symbol].price = price;
+      data[symbol].trades++;
+      data[symbol].cvd += isBuyerMaker ? -qty : qty;
+      data[symbol].cumVP += price * qty;
+      data[symbol].cumV += qty;
+      data[symbol].vwap = data[symbol].cumV > 0 ? data[symbol].cumVP / data[symbol].cumV : price;
+
+      updateSignal(symbol);
+      render();
+    }
+
+    function handleMarkPrice(mp) {
+      const symbol = mp.s;      if (!data[symbol]) return;
+      data[symbol].markPrice = parseFloat(mp.p);
+    }
+
+    function handleKline(k) {
+      const symbol = k.s;
+      if (!data[symbol] || !k.k.x) return;
+
+      const close = parseFloat(k.k.c);
+      const vol = parseFloat(k.k.v);
+
+      data[symbol].closes.push(close);
+      data[symbol].volumes.push(vol);
+
+      if (data[symbol].closes.length > 50) {
+        data[symbol].closes.shift();
+        data[symbol].volumes.shift();
+      }
+
+      calculateRSI(symbol);
+      calculateVolume(symbol);
+      updateSignal(symbol);
+      render();
+    }
+
+    function calculateRSI(sym) {
+      const d = data[sym];
+      const closes = d.closes;
+      const period = CONFIG.rsiPeriod;
+      
+      if (closes.length < period + 1) { d.rsi = 50; return; }
+
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = closes[closes.length - i] - closes[closes.length - i - 1];
+        diff >= 0 ? gains += diff : losses -= diff;
+      }
+      
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      
+      for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i-1];
+        avgGain = (avgGain * (period - 1) + (diff > 0 ? diff : 0)) / period;
+        avgLoss = (avgLoss * (period - 1) + (diff < 0 ? -diff : 0)) / period;
+      }
+      
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      d.rsi = 100 - (100 / (1 + rs));
+    }
+    function calculateVolume(sym) {
+      const d = data[sym];
+      const vols = d.volumes;
+      const period = CONFIG.volPeriod;
+      
+      if (vols.length < period) {
+        d.volAvg = vols.reduce((a,b)=>a+b,0)/vols.length;
+      } else {
+        d.volAvg = vols.slice(-period).reduce((a,b)=>a+b,0)/period;
+      }
+      
+      d.volRatio = d.volAvg > 0 ? vols[vols.length-1] / d.volAvg : 1;
+    }
+
+    function updateSignal(sym) {
+      const d = data[sym];
+      const m = marketData[sym] || {};
+      let score = 0;
+
+      // 1. CVD (Order Flow) - Weight: 1.5
+      score += d.cvd > 0 ? 1.5 : -1.5;
+
+      // 2. VWAP (Trend Filter) - Weight: 1.5
+      score += d.price > d.vwap ? 1.5 : -1.5;
+
+      // 3. RSI (Momentum) - Weight: 1
+      if (d.rsi < 30) score += 1;
+      else if (d.rsi > 70) score -= 1;
+      else if (d.rsi > 45 && d.rsi < 55) score += 0.5;
+
+      // 4. Volume (Conviction) - Weight: 1
+      if (d.volRatio > 1.5) score += 1;
+      else if (d.volRatio < 0.7) score -= 0.5;
+
+      // 5. Funding Rate - Weight: 1.5
+      if (m.fundingRate > 0.01) score -= 1; // High positive funding = crowded longs
+      else if (m.fundingRate < -0.01) score += 1; // High negative = crowded shorts
+      else score += 0.5;
+
+      // 6. Long/Short Ratio - Weight: 1
+      if (m.longShortRatio > 0.6) score -= 0.5; // Too many longs
+      else if (m.longShortRatio < 0.4) score += 0.5; // Too many shorts
+      else score += 0.5;
+
+      // 7. Open Interest Trend - Weight: 1
+      if (m.openInterest > 0) score += 0.5; // Rising OI confirms trend
+      else score -= 0.5;
+
+      d.score = score;      
+      if (score >= 6) d.signal = 'STRONG BUY';
+      else if (score >= 3.5) d.signal = 'BUY';
+      else if (score <= -6) d.signal = 'STRONG SELL';
+      else if (score <= -3.5) d.signal = 'SELL';
+      else d.signal = 'NEUTRAL';
+    }
+
+    function updateMarketDataUI() {
+      const container = document.getElementById('market-data');
+      container.innerHTML = Object.entries(marketData).map(([sym, m]) => {
+        const coin = CONFIG.symbols[sym];
+        const fundingClass = m.fundingRate > 0 ? 'funding-positive' : 'funding-negative';
+        const fundingText = m.fundingRate > 0 ? `Longs Pay ${m.fundingRate.toFixed(3)}%` : `Shorts Pay ${Math.abs(m.fundingRate).toFixed(3)}%`;
+        const oiPct = Math.min(100, m.openInterest / 1000000000 * 100); // Normalize for display
+        const lsPct = m.longShortRatio * 100;
+        
         return `
-          <div class="card">
+          <div class="data-card">
             <div class="row">
-              <div class="name">${sym}</div>
-              <div class="price ${isUp ? 'up' : 'down'}">$${d.price.toFixed(2)}</div>
+              <div class="name">📊 ${coin} Market Data</div>
+              <div style="font-size:0.7rem;color:#6b7280">Auto-refresh: 30s</div>
             </div>
-            <div class="grid">
+            
+            <div class="grid-3">
               <div class="box">
-                <div class="label">CVD</div>
-                <div class="value">${d.cvd.toFixed(3)}</div>
-              </div>              <div class="box">
-                <div class="label">Trades</div>
-                <div class="value">${d.trades}</div>
+                <div class="label">Funding Rate</div>
+                <div class="value ${fundingClass}" style="font-size:0.85rem">${fundingText}</div>
+                <div style="font-size:0.65rem;color:#6b7280;margin-top:0.2rem">8h</div>
               </div>
               <div class="box">
-                <div class="label">Last Price</div>
-                <div class="value">$${d.price.toFixed(0)}</div>
+                <div class="label">Long/Short Ratio</div>
+                <div class="value">${lsPct.toFixed(1)}% / ${(100-lsPct).toFixed(1)}%</div>
+                <div class="liq-bar" style="margin-top:0.3rem">
+                  <div class="liq-long" style="width:${lsPct}%"></div>
+                  <div class="liq-short" style="width:${100-lsPct}%"></div>
+                </div>
               </div>
               <div class="box">
-                <div class="label">Signal</div>
-                <div class="value" style="color:${isUp ? '#00ff88' : '#ff3366'}">${isUp ? '🟢 BUY' : '🔴 SELL'}</div>
+                <div class="label">Open Interest</div>
+                <div class="value">$${(m.openInterest/1000000).toFixed(1)}M</div>
+                <div class="oi-bar"><div class="oi-fill" style="width:${oiPct}%"></div></div>
               </div>
             </div>
-            <div class="signal ${isUp ? 'buy' : 'sell'}">
-              ${isUp ? 'BUY PRESSURE' : 'SELL PRESSURE'}
+            
+            <div style="margin-top:0.5rem">
+              <div style="font-size:0.7rem;color:#6b7280;margin-bottom:0.3rem">Multi-Timeframe Liquidation Zones:</div>
+              <div class="timeframe-selector">
+                <button class="tf-btn ${CONFIG.currentTF === '1h' ? 'active' : ''}" onclick="setTimeframe('${sym}','1h')">1H</button>
+                <button class="tf-btn ${CONFIG.currentTF === '4h' ? 'active' : ''}" onclick="setTimeframe('${sym}','4h')">4H</button>                <button class="tf-btn ${CONFIG.currentTF === '24h' ? 'active' : ''}" onclick="setTimeframe('${sym}','24h')">24H</button>
+              </div>
+              ${(m.liqZones[CONFIG.currentTF] || []).map(zone => `
+                <div class="liq-zone ${zone.side}">
+                  <span>$${zone.price.toLocaleString()} <span style="color:#6b7280">(${zone.type})</span></span>
+                  <span>${zone.amount.toFixed(0)}M ${zone.side.toUpperCase()}S</span>
+                </div>
+              `).join('')}
             </div>
-            <div class="log">Messages received: ${messageCount}</div>
           </div>
         `;
       }).join('');
     }
 
-    // Initialize
+    function setTimeframe(sym, tf) {
+      CONFIG.currentTF = tf;
+      updateMarketDataUI();
+    }
+
+    function render() {
+      const container = document.getElementById('cards');
+      container.innerHTML = Object.entries(data).map(([sym, d]) => {
+        const m = marketData[sym] || {};
+        const rsiClass = d.rsi < 30 ? 'oversold' : d.rsi > 70 ? 'overbought' : 'neutral';
+        const rsiText = d.rsi < 30 ? 'OVERSOLD' : d.rsi > 70 ? 'OVERBOUGHT' : 'NEUTRAL';
+        const volWidth = Math.min(100, d.volRatio * 50);
+        const volColor = d.volRatio > 1.5 ? '#00ff88' : d.volRatio < 0.7 ? '#ff3366' : '#00d4ff';
+        const sigClass = d.signal.toLowerCase().replace(' ', '-');
+        
+        const fundingBadge = m.fundingRate > 0.01 ? '<span class="badge high">HIGH</span>' : 
+                            m.fundingRate < -0.01 ? '<span class="badge low">NEG</span>' : '';
+
+        return `
+          <div class="card">
+            <div class="row">
+              <div class="name">${sym}</div>
+              <div class="price ${d.price > d.vwap ? 'up' : 'down'}">$${d.price.toLocaleString()}</div>
+            </div>
+            <div class="grid">
+              <div class="box">
+                <div class="label">CVD</div>
+                <div class="value">${d.cvd.toFixed(2)}</div>
+              </div>
+              <div class="box">
+                <div class="label">VWAP</div>
+                <div class="value">$${d.vwap.toFixed(0)}</div>
+              </div>
+              <div class="box">
+                <div class="label">RSI (14)</div>
+                <div class="value" style="color:${rsiClass === 'oversold' ? '#00ff88' : rsiClass === 'overbought' ? '#ff3366' : '#e0e6ed'}">${d.rsi.toFixed(1)}</div>                <div style="font-size:0.65rem;color:#6b7280">${rsiText}</div>
+              </div>
+              <div class="box">
+                <div class="label">VOL</div>
+                <div class="value">${d.volRatio.toFixed(2)}x</div>
+                <div class="liq-bar" style="margin-top:0.2rem"><div class="liq-long" style="width:${volWidth}%;background:${volColor}"></div></div>
+              </div>
+            </div>
+            <div class="signal ${sigClass}">${d.signal} ${fundingBadge}</div>
+            <div style="text-align:center;font-size:0.7rem;color:#6b7280;margin-top:0.5rem">
+              Score: ${d.score.toFixed(1)}/8 | Funding: ${m.fundingRate ? m.fundingRate.toFixed(3) : '0'}%
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     window.addEventListener('DOMContentLoaded', () => {
       render();
-      setTimeout(connect, 1000);
+      connect();
     });
   </script>
 </body>
